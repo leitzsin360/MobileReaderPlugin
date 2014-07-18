@@ -77,7 +77,8 @@ public class MobileReaderPlugin extends CordovaPlugin  {
     
     private JSONObject lastReadData;
 	
-    
+    String action;
+    JSONArray args;
     /**
      * Executes the request.
      *
@@ -94,86 +95,64 @@ public class MobileReaderPlugin extends CordovaPlugin  {
      *
      */
     @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
-        this.callbackContext = callbackContext;
+    public boolean execute(String myaction, JSONArray myargs, CallbackContext mycallbackContext) {
+        this.callbackContext = mycallbackContext;
+        this.action = myaction;
+        this.args = myargs;
         log("JSONArray:"+args.toString());
-        JSONObject ret = newResultObject();
-        if(action.equals(CMDRESET)) {
-        	this.close();
-        	this.open();
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDSTANDBY)){
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDWRITE)){
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDRESET)){
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDTEST)){
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDWORK)){
-        	open();
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDLOCK)){
-        	close();
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDUNLOCK)){
-        	open();
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDREAD)){
-        	//callbackContext.success(ret);
-        	//this.doReadData();
-        	this.open();
-        }else if(action.equals(CMDSLEEP)){
-        	callbackContext.success(ret);
-        }else if(action.equals(CMDTIMEOUT)){
-        	JSONObject obj = args.optJSONObject(0);
-        	if (obj != null) {
-        		try{
-	        		int timeout = obj.optInt(FDATA);
-	        		setTimerout(timeout);
-	        		callbackContext.success(ret);
-	        		return true;
-        		}catch(Exception ex)
-        		{
-        			log(ex.getMessage());
-        			callbackContext.error("settimeout failed");
-        			return false;
-        		}
-        	}
-        	return false;
-        }else{
-        	callbackContext.error("Unknown action:"+action);
-        	return false;
-        }
-
-        //if (action.equals(Map)) {
-            //JSONObject obj = args.optJSONObject(0);
-            //map(args);
-            /*
-            if (obj != null) {
-                String type = obj.optString(TYPE);
-                String data = obj.optString(DATA);
-
-                // If the type is null then force the type to text
-                if (type == null) {
-                    type = TEXT_TYPE;
-                }
-
-                if (data == null) {
-                    callbackContext.error("User did not specify data to encode");
-                    return true;
-                }
-
-                encode(type, data);
-            } else {
-                callbackContext.error("User did not specify data to encode");
-                return true;
-            }*/
-        //} else if (action.equals(Addr)) {
-            //scan();
-        //} else {
-        //    return false;
-        //}
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+        
+		        JSONObject ret = MobileReaderPlugin.this.newResultObject();
+		        if(action.equals(CMDRESET)) {
+		        	close();
+		        	open();
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDSTANDBY)){
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDWRITE)){
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDRESET)){
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDTEST)){
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDWORK)){
+		        	open();
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDLOCK)){
+		        	close();
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDUNLOCK)){
+		        	open();
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDREAD)){
+		        	//callbackContext.success(ret);
+		        	//this.doReadData();
+		        	open();
+		        }else if(action.equals(CMDSLEEP)){
+		        	callbackContext.success(ret);
+		        }else if(action.equals(CMDTIMEOUT)){
+		        	JSONObject obj = args.optJSONObject(0);
+		        	if (obj != null) {
+		        		try{
+			        		int timeout = obj.optInt(FDATA);
+			        		setTimerout(timeout);
+			        		callbackContext.success(ret);
+			        		//return true;
+		        		}catch(Exception ex)
+		        		{
+		        			log(ex.getMessage());
+		        			callbackContext.error("settimeout failed");
+		        			//return false;
+		        		}
+		        	}
+		        	//return false;
+		        }else{
+		        	callbackContext.error("Unknown action:"+action);
+		        	//return false;
+		        }
+            }
+        });
         return true;
     } 
     
