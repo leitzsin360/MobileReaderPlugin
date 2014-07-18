@@ -17,16 +17,16 @@ import android.os.Build;
 import android.text.format.Time;
 import android.util.Log;
 
-import org.apache.cordova.api.CordovaPlugin;
-import org.apache.cordova.api.CallbackContext;
-import org.apache.cordova.api.PluginResult;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.PluginResult;
 
 import com.gdseed.mobilereader.MobileReader;
 import com.gdseed.mobilereader.MobileReader.ReaderStatus;
 
 public class MobileReaderPlugin extends CordovaPlugin  {
 
-    private static final String LOG_TAG = "com.gdseed.mobilereader.phonegap.Plugin";
+    private static final String LOG_TAG = "com.lke.Plugin.MobileReaderPlugin";
 	private static final String Algorithm = "DESede/ECB/NOPADDING";
 	private final static String modelMS62x = "MS62x";
 	private final static String modelMS22x = "MS22x";
