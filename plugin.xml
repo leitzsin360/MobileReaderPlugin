@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
-           id="org.devgirl.calendar"
+           id="com.lke.plugin.MobileReaderPlugin"
       version="0.1.0">
     <name>MobileReaderPlugin</name>
     <description>Mobile Reader Plugin</description>
@@ -21,6 +21,6 @@
             </feature>
         </config-file>
 
-        <source-file src="src/android/MobileReaderPlugin.java" target-dir="src/com/lke/plugin/MobileReader" />      
+        <source-file src="src/android/MobileReaderPlugin.java" target-dir="src/com/lke/plugin" />      
      </platform>          
 </plugin>
