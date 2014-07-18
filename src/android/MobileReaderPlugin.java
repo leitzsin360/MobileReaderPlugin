@@ -98,7 +98,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
         this.action = myaction;
         this.args = myargs;
         log("JSONArray:"+args.toString());
-        if (!mobileReader.deviceIsAvailable()){
+        if (!getMobileReader().deviceIsAvailable()){
         	callbackContext.error("mobile reader is not ready");
         	return false;
         }
@@ -165,7 +165,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		phoneSysCode = Build.VERSION.RELEASE;
 		phoneModel = Build.MODEL;
 		phoneManufacturer = Build.MANUFACTURER;
-	   	this.InitMobileReader();
+	   	//this.InitMobileReader();
     }
     
     private MobileReader getMobileReader() {
@@ -257,9 +257,9 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 	public int writecmd(String cmd) {
 		byte tmp[] = new byte[256];
 		int cnt = StringToHex(cmd, tmp);
-		mobileReader.write(tmp, cnt);
+		getMobileReader().write(tmp, cnt);
 		byte rawData[] = new byte[1024];
-		int len = mobileReader.read(rawData);
+		int len = getMobileReader().read(rawData);
 		int ret = len>0?(int)rawData[0]:-1;
 		if(0x77==ret) ret = (int)rawData[1];
 		log("writecmd --> " + cmd);
@@ -302,7 +302,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		
 		byte tmp[] = new byte[256];
 		int cnt = StringToHex(cmd, tmp);
-		mobileReader.write(tmp, cnt);
+		getMobileReader().write(tmp, cnt);
 		byte rawData[] = new byte[1024];
 		int len = mobileReader.read(rawData);
 		int ret = len>0?(int)rawData[0]:-1;
@@ -338,7 +338,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		String retCode=ERROK;
 		String errMsg = "";
 	
-		if (!mobileReader.deviceIsAvailable()) return ret;
+		if (!getMobileReader().deviceIsAvailable()) return ret;
 		
 		if (oldKsn.length() < 14) {
 			errMsg = "oldKsn length <14";
@@ -448,7 +448,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
     	int trackCount[] = new int[1];
     	trackCount[0] = 0;
     	JSONObject ret = newResultObject();
-		int len = mobileReader.read(rawData);
+		int len = getMobileReader().read(rawData);
 		int recode = 0;
 		
 		if (len < 1) {
