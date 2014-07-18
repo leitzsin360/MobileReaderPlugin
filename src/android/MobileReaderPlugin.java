@@ -1069,7 +1069,8 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 
 	
 	private final String errMsg[]=new String[]{
-		"EEPROM can¡¯t be written correctly"
+		""
+		,"EEPROM can¡¯t be written correctly"
 		,"memory overflow"
 		,"EEPROM is not enough"
 		,"the index of key has been occupied"
