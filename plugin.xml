@@ -22,5 +22,12 @@
         </config-file>
 
         <source-file src="src/android/MobileReaderPlugin.java" target-dir="src/com/lke/plugin" />      
+        <source-file src="libs/mobilereader-api.jar" target-dir="libs" />      
+
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+
      </platform>          
 </plugin>
