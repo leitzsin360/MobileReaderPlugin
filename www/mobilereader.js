@@ -54,5 +54,7 @@ var mobilereader =  {
             cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'lock', options);
         }
 
-}
+};
+console.log("mobilereader inited");
+
 module.exports = mobilereader;
