@@ -52,7 +52,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 	private static final String CMDTEST="test";
 
 	//5) Command to set the Work mode of device and Lock device 
-	private static final String CMDWORK="work";
+	private static final String CMDWORK="worklock";
 	private static final String CMDLOCK="lock";
 	private static final String CMDUNLOCK="unlock";
 
@@ -107,9 +107,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
         
 		        JSONObject ret = MobileReaderPlugin.this.newResultObject();
 		        if(action.equals(CMDRESET)) {
-		        	close();
-		        	open();
-		        	callbackContext.success(ret);
+		        	reset(args,ret);
 		        }else if(action.equals(CMDSTANDBY)){
 		        	enterStandby(ret);
 		        	//callbackContext.success(ret);
@@ -123,10 +121,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		        	worklock(args,ret);
 		        	//callbackContext.success(ret);
 		        }else if(action.equals(CMDWRITE)){
-		        	
-		        	callbackContext.success(ret);
-		        }else if(action.equals(CMDRESET)){
-		        	reset(args,ret);
+		        	writeKey(args,ret);
 		        	//callbackContext.success(ret);
 		        //}else if(action.equals(CMDLOCK)){
 		        //	SendCmd(cmdLockSystem);
@@ -406,6 +401,33 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		log("KSN DEV -> " + cmdKsnAndDeviceInfo);
 		messageHandler(MessageType.InjectBegin);		
 		return ret;
+	}
+	
+	final String FOLDKEY="oldKey";
+	final String FOLDKSN="oldKsn";
+	final String FOLDKEYMANAGE="oldKeyManage";
+	final String FNEWKEY="newKey";
+	final String FNEWKSN="newKsn";
+	final String FNEWKEYMANAGE="newKeyManage";
+	///write key
+	public int writeKey(JSONArray args,JSONObject retObj)
+	{
+		int ret=-1;
+		String oldKey, oldKsn, oldKeyManage, newKey, newKsn, newKeyManage;
+		if(args == null || args.length()== 0 || args.optJSONObject(0) == null){
+			callbackResult(retObj,ret,"missing key data");		
+			return -1;
+		}
+		JSONObject dataobj = args.optJSONObject(0);
+		
+		oldKey = getResultField(dataobj,FOLDKEY);
+		oldKsn = getResultField(dataobj,FOLDKSN);
+		oldKeyManage = getResultField(dataobj,FOLDKEY);
+		newKey = getResultField(dataobj,FNEWKEY);
+		newKsn = getResultField(dataobj,FNEWKSN);
+		newKeyManage = getResultField(dataobj,FNEWKEYMANAGE);
+		
+		return writeKey( oldKey, oldKsn, oldKeyManage, newKey, newKsn, newKeyManage, retObj);
 	}
 	
 	static final String cmdReset="03";
@@ -1031,7 +1053,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 	}
 	
 	
-	private final static String FIXED_KEY = "Fixed Key";
+	private final static String FIXED_KEY = "FixedKey";
 	private final static String DUKPT = "Dukpt";
 	
 	// cmd
@@ -1125,4 +1147,15 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 	}
 	*/
 
+	public String getResultField(JSONObject retObj,String name){
+		try{
+			if(retObj != null){
+				return retObj.getString(name);
+			}
+			return null;
+		}catch(JSONException ex){
+			log(ex.getMessage());
+			return null;
+		}
+	}
  }

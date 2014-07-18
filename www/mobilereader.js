@@ -25,6 +25,21 @@ var mobilereader =  {
         },
 
         //-------------------------------------------------------------------
+        standby : function ( successCallback, errorCallback, options) {
+			if(!this.valideCallback(successCallback, errorCallback)) return;
+
+            cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'standby', options);
+        },
+
+        //-------------------------------------------------------------------
+        exit : function ( successCallback, errorCallback, options) {
+			if(!this.valideCallback(successCallback, errorCallback)) return;
+
+            cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'exit', options);
+        },
+
+
+        //-------------------------------------------------------------------
         open : function ( successCallback, errorCallback, options) {
 			if(!this.valideCallback(successCallback, errorCallback)) return;
 
@@ -41,18 +56,32 @@ var mobilereader =  {
 
 
         //-------------------------------------------------------------------
-        work : function (successCallback, errorCallback, options) {
+        worklock : function (successCallback, errorCallback, options) {
 			if(!this.valideCallback(successCallback, errorCallback)) return;
 
-            cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'work',options);
+            cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'worklock',options);
         },
 
         //-------------------------------------------------------------------
-        lock : function (successCallback, errorCallback, options) {
+        reset : function (successCallback, errorCallback, options) {
 			if(!this.valideCallback(successCallback, errorCallback)) return;
 
-            cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'lock', options);
-        }
+            cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'reset', options);
+        },
+		
+        //-------------------------------------------------------------------
+        test : function (successCallback, errorCallback, options) {
+			if(!this.valideCallback(successCallback, errorCallback)) return;
+
+            cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'test', options);
+        },		
+		
+        //-------------------------------------------------------------------
+        writekey : function (successCallback, errorCallback, options) {
+			if(!this.valideCallback(successCallback, errorCallback)) return;
+
+            cordova.exec(successCallback, errorCallback, 'MobileReaderPlugin', 'writekey', options);
+        }		
 
 };
 console.log("mobilereader inited");
