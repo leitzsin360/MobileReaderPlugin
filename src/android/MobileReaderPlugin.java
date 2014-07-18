@@ -10,9 +10,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-//import android.app.Activity;
-//import android.content.Intent;
-//import android.graphics.Color;
 import android.os.Build;
 import android.text.format.Time;
 import android.util.Log;
@@ -43,10 +40,10 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 	
 	//1) Command to set timeout to enter Standby mode and sleep mode
 	private static final String CMDSTANDBY="standby";
-	private static final String CMDSLEEP="sleep";
+	private static final String CMDEXITSTANDBY="exit";
 
 	//2) Command to write Key
-	private static final String CMDWRITE="write";
+	private static final String CMDWRITE="writekey";
 
 	//3) Command to to restore to default settings and unlock the device
 	private static final String CMDRESET="reset";
@@ -65,8 +62,9 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 	
 	//ERROR CODE
 	private static final String ERROK="0";
+	private static final String ERRFailed="-1";
 	private static final String ERRUNKNOWNFORMAT="100";
-	private static final String ERRPARSEFAILED="10";
+	private static final String ERRPARSEFAILED="-1";
 	//private static final String ERRUNKNOWNFORMAT="100";
 	//private static final String ERRUNKNOWNFORMAT="100";
 	//private static final String ERRUNKNOWNFORMAT="100";
@@ -100,6 +98,10 @@ public class MobileReaderPlugin extends CordovaPlugin  {
         this.action = myaction;
         this.args = myargs;
         log("JSONArray:"+args.toString());
+        if (!mobileReader.deviceIsAvailable()){
+        	callbackContext.error("mobile reader is not ready");
+        	return false;
+        }
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
         
@@ -109,28 +111,33 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		        	open();
 		        	callbackContext.success(ret);
 		        }else if(action.equals(CMDSTANDBY)){
-		        	callbackContext.success(ret);
+		        	enterStandby(ret);
+		        	//callbackContext.success(ret);
+		        }else if(action.equals(CMDEXITSTANDBY)){
+		        	exitStandby(ret);
+		        	//callbackContext.success(ret);
+		        }else if(action.equals(CMDTEST)){
+		        	test(args,ret);
+		        	//callbackContext.success(ret);
+		        }else if(action.equals(CMDWORK)){
+		        	worklock(args,ret);
+		        	//callbackContext.success(ret);
 		        }else if(action.equals(CMDWRITE)){
+		        	
 		        	callbackContext.success(ret);
 		        }else if(action.equals(CMDRESET)){
-		        	callbackContext.success(ret);
-		        }else if(action.equals(CMDTEST)){
-		        	callbackContext.success(ret);
-		        }else if(action.equals(CMDWORK)){
-		        	open();
-		        	callbackContext.success(ret);
-		        }else if(action.equals(CMDLOCK)){
-		        	close();
-		        	callbackContext.success(ret);
-		        }else if(action.equals(CMDUNLOCK)){
-		        	open();
-		        	callbackContext.success(ret);
+		        	reset(args,ret);
+		        	//callbackContext.success(ret);
+		        //}else if(action.equals(CMDLOCK)){
+		        //	SendCmd(cmdLockSystem);
+		        //	callbackContext.success(ret);
+		        //}else if(action.equals(CMDUNLOCK)){
+		        //	open();
+		        //	callbackContext.success(ret);
 		        }else if(action.equals(CMDREAD)){
 		        	//callbackContext.success(ret);
 		        	//this.doReadData();
 		        	open();
-		        }else if(action.equals(CMDSLEEP)){
-		        	callbackContext.success(ret);
 		        }else if(action.equals(CMDTIMEOUT)){
 		        	JSONObject obj = args.optJSONObject(0);
 		        	if (obj != null) {
@@ -163,7 +170,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		phoneSysCode = Build.VERSION.RELEASE;
 		phoneModel = Build.MODEL;
 		phoneManufacturer = Build.MANUFACTURER;
-    	
+	   	this.InitMobileReader();
     }
     
     private MobileReader getMobileReader() {
@@ -229,7 +236,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
     public void sendStatus(String status,boolean isError)
     {
     	log(status);
-    	this.onMessage(status,null);
+    	//this.onMessage(status,null);
     	if(isError && this.callbackContext != null)
     		this.callbackContext.error(status);
     }
@@ -252,7 +259,166 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		}
     }
     
+	public int writecmd(String cmd) {
+		byte tmp[] = new byte[256];
+		int cnt = StringToHex(cmd, tmp);
+		mobileReader.write(tmp, cnt);
+		byte rawData[] = new byte[1024];
+		int len = mobileReader.read(rawData);
+		int ret = len>0?(int)rawData[0]:-1;
+		if(0x77==ret) ret = (int)rawData[1];
+		log("writecmd --> " + cmd);
+		return ret;
+	}
+	
+	
+	public int writecmd(String cmd,JSONObject retObj)
+	{
+		int ret = writecmd(cmd);
+		callbackResult(retObj,ret,"");
+		return ret;
+	}
+	
+	static final String cmdEnterStandBy="0F";
+	public int enterStandby(JSONObject retObj)
+	{
+		return writecmd(cmdEnterStandBy,retObj);
+	}
+	static final String cmdExitStandBy="0C";
+	public int exitStandby(JSONObject retObj)
+	{
+		return writecmd(cmdExitStandBy,retObj);
+	}
     
+	static final String cmdTest="01";
+	public int test(JSONArray args,JSONObject retObj)
+	{
+		String data = "";
+		if(args != null && args.length()>0){
+			JSONObject obj = args.optJSONObject(0);
+			data = obj.optString(FDATA);
+		}
+		if("".equals(data) || data.length()<=60)
+		{
+			callbackResult(retObj,-1,"test data length must > 60");
+			return -1;
+		}
+		String cmd = cmdTest+data;
+		
+		byte tmp[] = new byte[256];
+		int cnt = StringToHex(cmd, tmp);
+		mobileReader.write(tmp, cnt);
+		byte rawData[] = new byte[1024];
+		int len = mobileReader.read(rawData);
+		int ret = len>0?(int)rawData[0]:-1;
+		if(0x77==ret) ret = (int)rawData[1];
+		log("test --> " + cmd);
+		
+		callbackResult(retObj,ret,"");
+		
+		return ret;
+	}
+    
+	
+	static final String cmdWorkLock="05";
+	public int worklock(JSONArray args,JSONObject retObj)
+	{
+		String data="";
+		if(args != null && args.length()>0){
+			JSONObject obj = args.optJSONObject(0);
+			data = obj.optString(FDATA);
+		}
+		if(data.length()==0){
+			data="0001";
+		}
+		String cmd = cmdWorkLock+data;
+		
+		return writecmd(cmd,retObj);
+	}
+	
+	///write key
+	public int writeKey(String oldKey,String oldKsn,String oldKeyManage,String newKey,String newKsn,String newKeyManage,JSONObject retObj)
+	{
+		int ret=-1;
+		String retCode=ERROK;
+		String errMsg = "";
+	
+		if (!mobileReader.deviceIsAvailable()) return ret;
+		
+		if (oldKsn.length() < 14) {
+			errMsg = "oldKsn length <14";
+			callbackResult(retObj,ret,errMsg);			
+			return ret;
+		}	
+		
+		if (DUKPT.equals(oldKeyManage)) {
+			byte tmpOldKsn[] = new byte[10];
+			byte baseOldKey[] = new byte[16];
+			byte oldInitKey[] = new byte[16];
+			StringToHex(oldKsn, tmpOldKsn);
+			StringToHex(oldKey, baseOldKey);
+			generateInitKeyByBdk(baseOldKey, tmpOldKsn, oldInitKey);
+			log("Cmd -->" + "oldInitKey" + oldInitKey);
+			oldKey = HexToString(oldInitKey, oldInitKey.length, 100);
+		} else if (FIXED_KEY.equals(oldKeyManage)){
+			
+		} else {
+			errMsg = "Unknown oldKeyManage";
+			callbackResult(retObj,ret,errMsg);			
+			return ret;
+		}
+		
+		cmdRefactory = headRefactory + oldKey;				
+		if (newKey.length() < 32) {
+			errMsg = "newKen length <32";
+			callbackResult(retObj,ret,errMsg);			
+			return ret;
+		}
+		
+		log("Cmd -->" + newKey);
+		
+		if (newKsn.length() < 14) {
+			errMsg =("New KSN length less 14 Characters!!");
+			callbackResult(retObj,ret,errMsg);			
+			return ret;
+		}
+		
+		String keyManagent = new String();
+		if (DUKPT.equals(newKeyManage)) {
+			keyManagent = "fe";
+			byte tmpKsn[] = new byte[10];
+			byte baseKey[] = new byte[16];
+			byte initKey[] = new byte[16];
+			StringToHex(newKsn, tmpKsn);
+			StringToHex(newKey, baseKey);
+			generateInitKeyByBdk(baseKey, tmpKsn, initKey);
+			newKey = HexToString(initKey, initKey.length, 100);					
+		} else if (FIXED_KEY.equals(newKeyManage)){
+			keyManagent = "00";
+		} else {
+			errMsg = "Unknown oldKeyManage";
+			callbackResult(retObj,ret,errMsg);			
+			return ret;
+		}
+		cmdKey = cmdMainKey + "10" + keyManagent + "0300" + newKey;
+		cmdKsnAndDeviceInfo = "060016" + newKsn + "00" + "00000000" + "00000000" + "0015aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000000000000";
+		log("Key->" + cmdKey);
+		log("KSN DEV -> " + cmdKsnAndDeviceInfo);
+		messageHandler(MessageType.InjectBegin);		
+		return ret;
+	}
+	
+	static final String cmdReset="03";
+	public int reset(JSONArray args,JSONObject retObj)
+	{
+		String data="";
+		if(args != null && args.length()>0){
+			JSONObject obj = args.optJSONObject(0);
+			data = obj.optString(FDATA);
+		}
+		String cmd = cmdReset+data;
+		return writecmd(cmd,retObj);
+	}
     
     public JSONObject  readdata() throws JSONException
     {
@@ -264,11 +430,11 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		int recode = 0;
 		
 		if (len < 1) {
-			if (len < 1) {
-				mobileReader.writeRecoderToFile(getCurrentFileName() + "_null.raw");
-			} else {
-				mobileReader.writeRecoderToFile(getCurrentFileName() + "_crc.raw");
-			}
+			//if (len < 1) {
+			//	mobileReader.writeRecoderToFile(getCurrentFileName() + "_null.raw");
+			//} else {
+			//	mobileReader.writeRecoderToFile(getCurrentFileName() + "_crc.raw");
+			//}
 			recode = 100;
 			ret.put(FERRMSG,"No Data!");
 		} else {
@@ -879,5 +1045,84 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		InjectBegin, TimeOut, ReturnOk, ReturnFail, InjectFail, InjectOk
 	}
 
+	
+	private final String errMsg[]=new String[]{
+		"EEPROM can¡¯t be written correctly"
+		,"memory overflow"
+		,"EEPROM is not enough"
+		,"the index of key has been occupied"
+		,"unknown error"
+		,"data of magnetic track can¡¯t be decoded correctly"
+		,"key reading error"
+		,"the key can¡¯t be used for encryption"
+		,"the key don¡¯t support disperse algorithm"
+		,"the dukpt count overflow"
+		,"the device did not receive right command"
+		,"unknown command"
+		,"random number is null"
+		,"the command did not unrealized"
+		,"the command format is error"
+		,"reserved"
+		,"the device is unlocked"
+		,"the old key that is encrypted track data is wrong"
+		,"reserved"
+		,"Disperse flag cannot support host mode"
+		,"the device is locked"		
+	};
+
+	public String getErrMsg(int errcode,String defaultMsg){
+		if(errcode>=0 && errcode<errMsg.length) return errMsg[errcode];
+		else if(errcode == -1 ){
+			if("".equals(defaultMsg)) return "exec failed";
+			else return defaultMsg;
+		}else{
+			return "";
+		}
+	}
+
+	
+	public void setResultField(JSONObject retObj,String name,String str){
+		try{
+			if(retObj != null){
+				retObj.put(name,str);
+			}
+		}catch(JSONException ex){
+			log(ex.getMessage());
+		}
+	}
+	
+
+	public void setResultField(JSONObject retObj,String name,int num){
+		try{
+			if(retObj != null){
+				retObj.put(name,String.valueOf(num));
+			}
+		}catch(JSONException ex){
+			log(ex.getMessage());
+		}
+	}	
+
+	public void callbackResult(JSONObject retObj,int errCode,String defaultMsg){
+		setResultField(retObj,FRESULT,errCode);
+		if(errCode == 0x90)
+		{
+			callbackContext.success(retObj);
+		}else{
+			setResultField(retObj,FERRMSG,getErrMsg(errCode,defaultMsg));
+			callbackContext.error(retObj);
+		}
+	}		
+	/*
+	public void callbackResult(JSONObject retObj,int errCode){
+		setResultField(retObj,FRESULT,errCode);
+		if(errCode == 0x90)
+		{
+			callbackContext.success(retObj);
+		}else{
+			setResultField(retObj,FERRMSG,getErrMsg(errCode));
+			callbackContext.error(retObj);
+		}
+	}
+	*/
 
  }
