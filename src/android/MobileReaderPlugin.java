@@ -475,7 +475,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 				} else {
 					//outMsg.setTextColor(Color.WHITE);
 				}
-				//ret.put(FDATA,display);
+				//ret.put(FERRMSG,display);
 			} else {
 				//outMsg.setTextColor(Color.RED);
 				display = "Unknown Format !!";
@@ -491,8 +491,8 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 				ret.put(FERRMSG,display);
 			} else {
 				//outMsg.setText(display);
-				ret.put(FDATA,display);
-				mobileReader.writeRecoderToFile("ok.raw");
+				//ret.put(FDATA,display);
+				//mobileReader.writeRecoderToFile("ok.raw");
 			}
 		}
 
@@ -709,10 +709,12 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		index += 80;
 		byte tmpTrackInfo = input[index];
 		int trackCount = 0;
+		int trackList[]={0,0,0};
 		for (int i = 0; i < 3; i++) {
 			byte info = (byte) (tmpTrackInfo & (0x01 << i));
 			if (0 != info) {
 				trackInfo += (char) ('1' + i);
+				trackList[trackCount]=i+1;
 				trackCount++;
 			}
 		}
@@ -731,26 +733,27 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 //			return ret;
 //		}
 		byte[] tmp_key = {0x01, 0x23, 0x45, 0x67, (byte)0x89, (byte)0xab, (byte)0xcd, (byte)0xef, (byte)0xfe, (byte)0xdc, (byte)0xba, (byte)0x98, 0x76, 0x54, 0x32, 0x10};
-		for(int i = 0; i < byEncrypedData.length; i++) {
+/*		for(int i = 0; i < byEncrypedData.length; i++) {
 			if (0 != i && 0 == (i % 16)) {
 				System.out.format("\n");
 			}
 			
 			System.out.format("%02x ", byEncrypedData[i]);
 		}
+*/
 		byte[] srcBytes = decryptMode(tmp_key, byEncrypedData);
-		for(int i = 0; i < srcBytes.length; i++) {
+/*		for(int i = 0; i < srcBytes.length; i++) {
 			if (0 != i && 0 == (i % 16)) {
 				System.out.format("\n");
 			}
 			
 			System.out.format("%02x ", srcBytes[i]);
 		}
-		
+*/		
 		for (int i = 0; i < 160; i++) {
-			if (0 != i && 0 == (i % 32))
+/*			if (0 != i && 0 == (i % 32))
 				decrypedData += '\n';
-			tmp = srcBytes[(i >> 1)] & 0xff;
+*/			tmp = srcBytes[(i >> 1)] & 0xff;
 			tmp = i % 2 == 0 ? tmp >> 4 : tmp & 0x0f;
 			tmp = tmp > 9 ? tmp - 10 + 'a' : tmp + '0';
 			decrypedData += (char) tmp;
@@ -769,6 +772,23 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 			realPan += tmp;
 		}
 		
+		//È¡trackdata
+		String trackdata1=new String(),trackdata2=new String(),trackdata3=new String();
+		for (int i = 0; i < trackCount; i++) {
+			int trackNo = trackList[i];
+			if(trackNo==0) break;
+			switch(trackNo){
+				case 1:
+					trackdata1=decrypedData.substring(40,160);
+					break;
+				case 2:
+					trackdata2=decrypedData.substring(0,40);
+					break;
+				case 3:
+					trackdata3=decrypedData.substring(40,160);
+					break;
+			}
+		}		
 		
 //		ret += decrypedData;
 //		ret += "\nPan:" + realPan;
@@ -783,6 +803,9 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 		retObj.put(FDATA,decrypedData);
 		retObj.put(FTRACK,trackInfo);
 		retObj.put(FCARDNUM,realPan);
+		retObj.put(FTRACK1,trackdata1);
+		retObj.put(FTRACK2,trackdata2);
+		retObj.put(FTRACK3,trackdata3);
 		return retObj;//return ret;
 		
 	}
@@ -840,6 +863,10 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 			obj.put(FENCRYPT,"");
 			obj.put(FENCRYPTDATA,"");
 			obj.put(FTRACK,"");
+			//obj.put(FTRACK0,"");
+			obj.put(FTRACK1,"");
+			obj.put(FTRACK2,"");
+			obj.put(FTRACK3,"");
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -861,6 +888,10 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 	static String FTRACK="track";
 	//static String EXPIR="Expiration";
 	static String FTIMEOUT="timeout";
+	static String FTRACK0="track0";
+	static String FTRACK1="track1";
+	static String FTRACK2="track2";
+	static String FTRACK3="track3";
 	
 	
 	private void generateInitKeyByBdk(byte baseKey[], byte ksn[], byte[] initKey)
@@ -1069,8 +1100,7 @@ public class MobileReaderPlugin extends CordovaPlugin  {
 
 	
 	private final String errMsg[]=new String[]{
-		""
-		,"EEPROM can¡¯t be written correctly"
+		"EEPROM can¡¯t be written correctly"
 		,"memory overflow"
 		,"EEPROM is not enough"
 		,"the index of key has been occupied"
